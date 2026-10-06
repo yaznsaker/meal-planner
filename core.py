@@ -213,8 +213,9 @@ def distribute(items,ratios=DEFAULT_RATIOS):
             del out[m][n]
             out['Dinner'][n]=g
 
-    return out    
-    def alternativesfoodforbiddenonelimit=8):
+    return out
+
+def alternatives(food,forbidden=None,limit=8):
     if food not in BYNAME: raise ValueError('Unknown food')
     forbidden=set(forbidden or [])
     if any(x not in BYNAME for x in forbidden): raise ValueError('Unknown forbidden food')
