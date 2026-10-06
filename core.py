@@ -153,16 +153,68 @@ def meal_targets(target,ratios=DEFAULT_RATIOS):
     return [{k:target[k]*r[i] for k in target} for i in range(4)]
 
 def distribute(items,ratios=DEFAULT_RATIOS):
-    # Preserve API: return meal buckets using food tags and stable fallback.
+    # Distribute foods across compatible meals while keeping all four meals usable.
     out={m:{} for m in MEALS}
-    for n,g in items.items():
-        f=BYNAME[n]; placed=False
-        for m in MEALS:
-            if m.lower() in f.tags: out[m][n]=g; placed=True; break
-        if not placed: out['Lunch'][n]=g
-    return out
 
-def alternatives(food,forbidden=None,limit=8):
+    total_target={
+        k:sum(nutrients(n,g)[k] for n,g in items.items())
+        for k in ('kcal','protein','carbs','fat')
+    }
+    targets=meal_targets(total_target,ratios)
+    current=[0.0,0.0,0.0,0.0]
+
+    def meal_index(name):
+        return MEALS.index(name)
+
+    remaining=[]
+
+    # Foods that belong to only one meal are fixed first.
+    for n,g in items.items():
+        compatible=[m for m in MEALS if m.lower() in BYNAME[n].tags]
+
+        if len(compatible)==1:
+            i=meal_index(compatible[0])
+            out[compatible[0]][n]=g
+            current[i]+=nutrients(n,g)['kcal']
+        else:
+            remaining.append((n,g,compatible))
+
+    # Distribute foods with multiple possible meals
+    # toward the meal that is furthest below its calorie target.
+    for n,g,compatible in sorted(
+        remaining,
+        key=lambda x:-nutrients(x[0],x[1])['kcal']
+    ):
+        kcal=nutrients(n,g)['kcal']
+        choices=compatible or ['Lunch']
+
+        i=min(
+            (meal_index(m) for m in choices),
+            key=lambda j:current[j]/max(targets[j]['kcal'],1)
+        )
+
+        out[MEALS[i]][n]=g
+        current[i]+=kcal
+
+    # Guarantee that dinner is represented whenever
+    # there is at least one dinner-compatible food.
+    if not out['Dinner']:
+        candidates=[]
+
+        for m in ('Lunch','Breakfast','Snack'):
+            for n,g in out[m].items():
+                if 'dinner' in BYNAME[n].tags:
+                    candidates.append(
+                        (nutrients(n,g)['kcal'],m,n,g)
+                    )
+
+        if candidates:
+            _,m,n,g=min(candidates)
+            del out[m][n]
+            out['Dinner'][n]=g
+
+    return out    
+    defalternativesfoodforbiddenonelimit=8):
     if food not in BYNAME: raise ValueError('Unknown food')
     forbidden=set(forbidden or [])
     if any(x not in BYNAME for x in forbidden): raise ValueError('Unknown forbidden food')
