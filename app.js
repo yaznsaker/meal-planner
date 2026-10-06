@@ -1,4 +1,4 @@
-const const $=id=>document.getElementById(id);
+const $=id=>document.getElementById(id);
 
 const j=async(url,opt={})=>{
   const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opt});
