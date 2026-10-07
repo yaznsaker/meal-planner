@@ -39,8 +39,14 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         p=unquote(urlparse(self.path).path)
-        routes={'/':BASE/'web/templates/index.html','/app.js':BASE/'web/static/app.js','/styles.css':BASE/'web/static/styles.css','/manifest.webmanifest':BASE/'web/static/manifest.webmanifest','/sw.js':BASE/'web/static/sw.js','/icon-192.png':BASE/'web/static/icon-192.png','/icon-512.png':BASE/'web/static/icon-512.png'}
-        if p.startswith('/static/'):
+        routes=
+    '/': BASE/'index.html',
+    '/index.html': BASE/'index.html',
+    '/app.js': BASE/'app.js',
+    '/styles.css': BASE/'styles.css',
+    '/manifest.webmanifest': BASE/'manifest.webmanifest',
+    '/sw.js': BASE/'sw.js'
+        }    if p.startswith('/static/'):
             rel=Path(p[len('/static/'):])
             if rel.is_absolute() or '..' in rel.parts: return self.send_error(403)
             return self.send_file(BASE/'web/static'/rel)
