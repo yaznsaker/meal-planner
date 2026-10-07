@@ -39,14 +39,14 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         p=unquote(urlparse(self.path).path)
-        routes=
+        routes = {
     '/': BASE/'index.html',
     '/index.html': BASE/'index.html',
     '/app.js': BASE/'app.js',
     '/styles.css': BASE/'styles.css',
     '/manifest.webmanifest': BASE/'manifest.webmanifest',
     '/sw.js': BASE/'sw.js'
-        }    if p.startswith('/static/'):
+        }   if p.startswith('/static/'):
             rel=Path(p[len('/static/'):])
             if rel.is_absolute() or '..' in rel.parts: return self.send_error(403)
             return self.send_file(BASE/'web/static'/rel)
