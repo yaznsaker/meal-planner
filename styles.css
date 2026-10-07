@@ -1,190 +1,23 @@
 *{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:#f3f4f6;
-  color:#111827;
-  font-family:Arial,sans-serif;
-}
-
-.wrap{
-  max-width:900px;
-  margin:auto;
-  padding:18px;
-}
-
-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-h1{
-  margin:0 0 18px;
-}
-
-.card{
-  background:white;
-  border-radius:16px;
-  padding:18px;
-  margin:14px 0;
-  box-shadow:0 2px 12px #0001;
-}
-
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-  gap:12px;
-}
-
-label{
-  font-size:14px;
-}
-
-input,select,button{
-  width:100%;
-  padding:11px;
-  margin-top:6px;
-  border:1px solid #d1d5db;
-  border-radius:9px;
-  background:white;
-}
-
-button{
-  cursor:pointer;
-  background:#111827;
-  color:white;
-  border:0;
-  font-weight:bold;
-}
-
-button:hover{
-  opacity:.9;
-}
-
-.actions{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-top:12px;
-}
-
-#calcOut{
-  margin-top:14px;
-  font-weight:bold;
-  line-height:1.8;
-}
-
-#out{
-  margin-top:18px;
-  min-height:60px;
-}
-
-/* بطاقة اليوم */
-
-.day-card{
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:14px;
-  padding:16px;
-  margin-bottom:16px;
-}
-
-.day-card h2{
-  margin:0 0 14px;
-  font-size:21px;
-}
-
-/* معلومات السعرات والمغذيات */
-
-.target{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:8px;
-  margin-bottom:16px;
-}
-
-.target div{
-  background:#f9fafb;
-  border-radius:10px;
-  padding:10px;
-  text-align:center;
-}
-
-.target b{
-  display:block;
-  font-size:13px;
-  margin-bottom:5px;
-}
-
-.target span{
-  font-weight:bold;
-  font-size:14px;
-}
-
-/* الوجبات */
-
-.meals{
-  display:grid;
-  gap:10px;
-}
-
-.meal{
-  border:1px solid #e5e7eb;
-  border-radius:10px;
-  padding:12px;
-  background:#fafafa;
-}
-
-.meal h3{
-  margin:0 0 8px;
-  font-size:17px;
-}
-
-.meal ul{
-  list-style:none;
-  margin:0;
-  padding:0;
-}
-
-.meal li{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  padding:7px 0;
-  border-bottom:1px solid #eee;
-}
-
-.meal li:last-child{
-  border-bottom:0;
-}
-
-.meal strong{
-  white-space:nowrap;
-}
-
-/* الهاتف */
-
-@media(max-width:600px){
-
-  .wrap{
-    padding:12px;
-  }
-
-  .card{
-    padding:14px;
-  }
-
-  .target{
-    grid-template-columns:repeat(2,1fr);
-  }
-
-  .actions{
-    grid-template-columns:1fr;
-  }
-
-  .day-card h2{
-    font-size:19px;
-  }
-
-}
+body{margin:0;background:#f3f4f6;color:#111827;font-family:Arial,sans-serif}
+.wrap{max-width:900px;margin:auto;padding:18px}
+header{display:flex;justify-content:space-between;align-items:center}
+h1{margin:0 0 18px}
+.card{background:white;border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 2px 12px #0001}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+label{font-size:14px}
+input,select,button{width:100%;padding:11px;margin-top:6px;border:1px solid #d1d5db;border-radius:9px;background:white}
+button{cursor:pointer;background:#111827;color:white;border:0}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+#out{margin-top:16px}
+.plan-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.meal{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+.meal h3{margin:0 0 10px}
+.food{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e5e7eb}
+.food:last-child{border-bottom:0}
+.totals{margin-top:12px;padding:12px;background:#eef2ff;border-radius:10px;line-height:1.8}
+.day{background:white;border-radius:16px;padding:14px;margin-bottom:14px}
+.day h2{margin-top:0}
+.muted{opacity:.65}
+#calcOut{margin-top:14px;font-weight:bold;line-height:1.8}
+@media(max-width:600px){.actions,.plan-grid{grid-template-columns:1fr}}

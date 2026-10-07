@@ -112,38 +112,83 @@ def _score(items,target):
     t=totals(items); return sum(((t[k]-target[k])/max(target[k],1))**2 for k in ('kcal','protein','carbs','fat'))
 
 def optimize_daily(target, allowed=None, forbidden=None, preferred=None, ratios=DEFAULT_RATIOS, seed=7, iterations=2500):
-    names=_allowed(allowed,forbidden); preferred=[x for x in (preferred or []) if x in names]
-    if len(ratios)!=4 or any(float(x)<=0 for x in ratios): raise ValueError('ratios must contain four positive values')
-    s=sum(ratios); ratios=tuple(float(x)/s for x in ratios)
-    rng=random.Random(seed); best=None
-    # Start with meal-oriented random food selection, then optimize gram amounts.
+    names=_allowed(allowed,forbidden)
+    preferred=[x for x in (preferred or []) if x in names]
+    if len(ratios)!=4 or any(float(x)<=0 for x in ratios):
+        raise ValueError('ratios must contain four positive values')
+    s=sum(float(x) for x in ratios)
+    ratios=tuple(float(x)/s for x in ratios)
+    rng=random.Random(seed)
+    best=None
+
+    # Build the plan as four independent meal buckets. A food may appear
+    # in more than one meal, which prevents the previous "empty dinner"
+    # bug caused by storing every food only once globally.
     for _ in range(max(100,min(int(iterations),10000))):
-        items={}
+        meals={m:{} for m in MEALS}
         for i,meal in enumerate(MEALS):
             pool=_meal_candidates(meal,names)
-            if preferred and rng.random()<.35: pool=[x for x in preferred if x in pool] or preferred
-            # each meal gets 2-4 foods; ensure a protein source when possible
+            if preferred and rng.random()<.35:
+                preferred_pool=[x for x in preferred if x in pool]
+                if preferred_pool:
+                    pool=preferred_pool
+
             picks=[]
-            if any(BYNAME[x].group=='protein' for x in pool): picks.append(rng.choice([x for x in pool if BYNAME[x].group=='protein']))
-            while len(picks)<min(3,len(pool)):
+            protein_pool=[x for x in pool if BYNAME[x].group=='protein']
+            if protein_pool:
+                picks.append(rng.choice(protein_pool))
+
+            pick_count=min(3,len(pool))
+            while len(picks)<pick_count:
                 x=rng.choice(pool)
-                if x not in picks: picks.append(x)
+                if x not in picks:
+                    picks.append(x)
+
             meal_target={k:target[k]*ratios[i] for k in target}
             for n in picks:
                 f=BYNAME[n]
                 desired=meal_target['kcal']/(f.kcal/100)/max(1,len(picks))
-                items[n]=nearest_valid(n,desired)
-        # Local random improvements.
-        current=_score(items,target)
+                meals[meal][n]=nearest_valid(n,desired)
+
+        current=_score_meals(meals,target)
         for _j in range(8):
-            n=rng.choice(list(items)); f=BYNAME[n]; old=items[n]
+            meal=rng.choice(list(MEALS))
+            if not meals[meal]:
+                continue
+            n=rng.choice(list(meals[meal]))
+            f=BYNAME[n]
+            old=meals[meal][n]
             new=nearest_valid(n,old+rng.choice((-2,-1,1,2))*f.step_g)
-            items[n]=new
-            sc=_score(items,target)
-            if sc<=current: current=sc
-            else: items[n]=old
-        if best is None or current<best[0]: best=(current,items.copy())
-    return best[1]
+            meals[meal][n]=new
+            sc=_score_meals(meals,target)
+            if sc<=current:
+                current=sc
+            else:
+                meals[meal][n]=old
+
+        if best is None or current<best[0]:
+            best=(current,{m:d.copy() for m,d in meals.items()})
+
+    # Flatten only for the legacy internal API. If the same food is used
+    # twice, keep the larger total amount; build_plan uses the meal buckets
+    # for the authoritative totals.
+    flat={}
+    for meal in MEALS:
+        for n,g in best[1][meal].items():
+            flat[n]=flat.get(n,0)+g
+    return {'meals':best[1],'foods':flat}
+
+def _meal_totals(meals):
+    out={k:0.0 for k in ('kcal','protein','carbs','fat')}
+    for meal_items in meals.values():
+        t=totals(meal_items)
+        for k,v in t.items():
+            out[k]+=v
+    return out
+
+def _score_meals(meals,target):
+    t=_meal_totals(meals)
+    return sum(((t[k]-target[k])/max(target[k],1))**2 for k in ('kcal','protein','carbs','fat'))
 
 def meal_targets(target,ratios=DEFAULT_RATIOS):
     if len(ratios)!=4: raise ValueError('ratios must contain four values')
@@ -153,66 +198,13 @@ def meal_targets(target,ratios=DEFAULT_RATIOS):
     return [{k:target[k]*r[i] for k in target} for i in range(4)]
 
 def distribute(items,ratios=DEFAULT_RATIOS):
-    # Distribute foods across compatible meals while keeping all four meals usable.
+    # Preserve API: return meal buckets using food tags and stable fallback.
     out={m:{} for m in MEALS}
-
-    total_target={
-        k:sum(nutrients(n,g)[k] for n,g in items.items())
-        for k in ('kcal','protein','carbs','fat')
-    }
-    targets=meal_targets(total_target,ratios)
-    current=[0.0,0.0,0.0,0.0]
-
-    def meal_index(name):
-        return MEALS.index(name)
-
-    remaining=[]
-
-    # Foods that belong to only one meal are fixed first.
     for n,g in items.items():
-        compatible=[m for m in MEALS if m.lower() in BYNAME[n].tags]
-
-        if len(compatible)==1:
-            i=meal_index(compatible[0])
-            out[compatible[0]][n]=g
-            current[i]+=nutrients(n,g)['kcal']
-        else:
-            remaining.append((n,g,compatible))
-
-    # Distribute foods with multiple possible meals
-    # toward the meal that is furthest below its calorie target.
-    for n,g,compatible in sorted(
-        remaining,
-        key=lambda x:-nutrients(x[0],x[1])['kcal']
-    ):
-        kcal=nutrients(n,g)['kcal']
-        choices=compatible or ['Lunch']
-
-        i=min(
-            (meal_index(m) for m in choices),
-            key=lambda j:current[j]/max(targets[j]['kcal'],1)
-        )
-
-        out[MEALS[i]][n]=g
-        current[i]+=kcal
-
-    # Guarantee that dinner is represented whenever
-    # there is at least one dinner-compatible food.
-    if not out['Dinner']:
-        candidates=[]
-
-        for m in ('Lunch','Breakfast','Snack'):
-            for n,g in out[m].items():
-                if 'dinner' in BYNAME[n].tags:
-                    candidates.append(
-                        (nutrients(n,g)['kcal'],m,n,g)
-                    )
-
-        if candidates:
-            _,m,n,g=min(candidates)
-            del out[m][n]
-            out['Dinner'][n]=g
-
+        f=BYNAME[n]; placed=False
+        for m in MEALS:
+            if m.lower() in f.tags: out[m][n]=g; placed=True; break
+        if not placed: out['Lunch'][n]=g
     return out
 
 def alternatives(food,forbidden=None,limit=8):
@@ -238,13 +230,31 @@ def validate(plan,target,tolerance=.12):
 
 def build_plan(target,allowed=None,forbidden=None,preferred=None,ratios=DEFAULT_RATIOS,seed=7,iterations=2500):
     target={k:_finite(target[k],k) for k in ('kcal','protein','carbs','fat')}
-    if any(v<=0 for v in target.values()): raise ValueError('Targets must be positive')
-    items=optimize_daily(target,allowed,forbidden,preferred,ratios,seed,iterations)
-    meals=distribute(items,ratios)
-    return {'version':VERSION,'target':{k:round(v,1) for k,v in target.items()},'foods':{n:int(g) for n,g in items.items()},'meals':{m:{n:int(g) for n,g in d.items()} for m,d in meals.items()},'totals':{k:round(v,1) for k,v in totals(items).items()},'validation':validate(items,target)}
+    if any(v<=0 for v in target.values()):
+        raise ValueError('Targets must be positive')
+    result=optimize_daily(target,allowed,forbidden,preferred,ratios,seed,iterations)
+    meals=result['meals']
+    flat=result['foods']
+    meal_totals=_meal_totals(meals)
+    return {
+        'version':VERSION,
+        'target':{k:round(v,1) for k,v in target.items()},
+        'foods':{n:int(g) for n,g in flat.items()},
+        'meals':{m:{n:int(g) for n,g in meals[m].items()} for m in MEALS},
+        'totals':{k:round(v,1) for k,v in meal_totals.items()},
+        'validation':validate_totals(meal_totals,target)
+    }
+
+def validate_totals(t,target,tolerance=.12):
+    errors={}
+    for k in ('kcal','protein','carbs','fat'):
+        if abs(t[k]-target[k])/max(target[k],1)>tolerance:
+            errors[k]=round(t[k]-target[k],2)
+    return {'valid':not errors,'totals':{k:round(v,2) for k,v in t.items()},'errors':errors}
 
 def weekly_plan(target,days=7,allowed=None,forbidden=None,preferred=None,ratios=DEFAULT_RATIOS,seed=7):
-    days=max(1,min(7,int(days))); return {'version':VERSION,'days':[build_plan(target,allowed,forbidden,preferred,ratios,seed+i,1800) for i in range(days)]}
+    days=max(1,min(7,int(days)))
+    return {'version':VERSION,'days':[build_plan(target,allowed,forbidden,preferred,ratios,seed+i,1800) for i in range(days)]}
 
 def save(data,path):
     with open(path,'w',encoding='utf-8') as f: json.dump(data,f,ensure_ascii=False,indent=2)
