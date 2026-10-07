@@ -47,7 +47,7 @@ class Handler(BaseHTTPRequestHandler):
     '/manifest.webmanifest': BASE/'manifest.webmanifest',
     '/sw.js': BASE/'sw.js'
 }
-if p.startswith('/static/'):
+        if p.startswith('/static/'):
             rel=Path(p[len('/static/'):])
             if rel.is_absolute() or '..' in rel.parts: return self.send_error(403)
             return self.send_file(BASE/'web/static'/rel)
