@@ -254,7 +254,7 @@ def validate_totals(t,target,tolerance=.12):
 
 def weekly_plan(target,days=7,allowed=None,forbidden=None,preferred=None,ratios=DEFAULT_RATIOS,seed=7):
     days=max(1,min(7,int(days)))
-    return {'version':VERSION,'days':[build_plan(target,allowed,forbidden,preferred,ratios,seed+i,1800) for i in range(days)]}
+    return {'version':VERSION,'days':[build_plan(target,allowed,forbidden,preferred,ratios,seed+i,250) for i in range(days)]}
 
 def save(data,path):
     with open(path,'w',encoding='utf-8') as f: json.dump(data,f,ensure_ascii=False,indent=2)
