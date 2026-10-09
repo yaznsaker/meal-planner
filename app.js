@@ -22,8 +22,8 @@ $('calc').onclick=async()=>{
     $('calcOut').textContent=`BMR: ${d.calculation.BMR} | TDEE: ${d.calculation.TDEE} | الهدف: ${d.calculation.target_kcal} kcal`;
   }catch(e){$('calcOut').textContent=e.message}
 };
-
 let currentPlan = null;
+const payload=()=>{
   kcal:+$('kcal').value,protein:+$('protein').value,
   carbs:+$('carbs').value,fat:+$('fat').value
 });
@@ -53,16 +53,26 @@ function renderPlan(data){
   return html;
 }
 
-$('plan').onclick=async()=>{
-  try{$('out').innerHTML=renderPlan(await j('/api/plan',{method:'POST',body:JSON.stringify(payload())}))}
-  catch(e){$('out').textContent=e.message}
-};
-
-$('week').onclick=async()=>{
+week').onclick=async()=>{
   try{
     const d=await j('/api/week',{
       method:'POST',
-      body:JSON.stringify({...payload(),days:+$('days').value})
+      body:JSON.string$('plan').onclick=async()=>{
+  try{
+    currentPlan={
+      type:'daily',
+      target:payload(),
+      plan:await j('/api/plan',{
+        method:'POST',
+        body:JSON.stringify(payload())
+      })
+    };
+    $('out').innerHTML=renderPlan(currentPlan.plan);
+  }catch(e){
+    $('out').textContent=e.message;
+  }
+};
+{...payload(),days:+$('days').value})
     });
     $('out').innerHTML=d.days.map((day,i)=>`<section class="day"><h2>اليوم ${i+1}</h2>${renderPlan(day)}</section>`).join('');
   }catch(e){$('out').textContent=e.message}
