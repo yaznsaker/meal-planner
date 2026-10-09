@@ -23,7 +23,7 @@ $('calc').onclick=async()=>{
   }catch(e){$('calcOut').textContent=e.message}
 };
 
-const payload=()=>({
+let currentPlan = null;
   kcal:+$('kcal').value,protein:+$('protein').value,
   carbs:+$('carbs').value,fat:+$('fat').value
 });
