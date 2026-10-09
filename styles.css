@@ -9,7 +9,7 @@ label{font-size:14px}
 input,select,button{width:100%;padding:11px;margin-top:6px;border:1px solid #d1d5db;border-radius:9px;background:white}
 button{cursor:pointer;background:#111827;color:white;border:0}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-#out{margin-top:16px}
+#out{margin-top:16px;white-space:normal}
 .plan-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .meal{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
 .meal h3{margin:0 0 10px}
