@@ -74,8 +74,13 @@ week').onclick=async()=>{
 };
 {...payload(),days:+$('days').value})
     });
-    $('out').innerHTML=d.days.map((day,i)=>`<section class="day"><h2>اليوم ${i+1}</h2>${renderPlan(day)}</section>`).join('');
-  }catch(e){$('out').textContent=e.message}
+    currentPlan={
+  type:'weekly',
+  target:payload(),
+  days:+$('days').value,
+  plans:d.days
+};
+$('out').innerHTML=d.days.map((day,i)=>`<section class="day"><h2>اليوم ${i+1}</h2>${renderPlan(day)}</section>`).join(''); }catch(e){$('out').textContent=e.message}
 };
 
 j('/api/health').then(d=>$('status').textContent=d.version).catch(()=>{});
