@@ -21,3 +21,64 @@ button{cursor:pointer;background:#111827;color:white;border:0}
 .muted{opacity:.65}
 #calcOut{margin-top:14px;font-weight:bold;line-height:1.8}
 @media(max-width:600px){.actions,.plan-grid{grid-template-columns:1fr}}
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .wrap {
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .wrap > header,
+  .wrap > .card:first-of-type,
+  .wrap > .card:nth-of-type(2) > h2,
+  .wrap > .card:nth-of-type(2) > .grid,
+  .wrap > .card:nth-of-type(2) > .actions {
+    display: none !important;
+  }
+
+  .card,
+  .day {
+    box-shadow: none !important;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: #fff !important;
+  }
+
+  .plan-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .meal {
+    break-inside: avoid;
+    border: 1px solid #ccc;
+    background: #fff !important;
+  }
+
+  .day {
+    break-after: page;
+  }
+
+  .day:last-child {
+    break-after: auto;
+  }
+
+  .food {
+    border-bottom: 1px solid #ddd;
+  }
+
+  .totals {
+    background: #fff !important;
+    border: 1px solid #ccc;
+  }
+
+  button {
+    display: none !important;
+  }
+}
